@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Wonder Session Driver</title>
+    <organization>com.wonderstudio</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true"/>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <pkg-ref id="com.wonderstudio.driver"/>
+    <choices-outline>
+        <line choice="com.wonderstudio.driver"/>
+    </choices-outline>
+    <choice id="com.wonderstudio.driver" title="Wonder Session Audio Drivers">
+        <pkg-ref id="com.wonderstudio.driver"/>
+    </choice>
+    <pkg-ref id="com.wonderstudio.driver"
+             version="1.0.0"
+             onConclusion="none">WonderSession-component.pkg</pkg-ref>
+</installer-gui-script>

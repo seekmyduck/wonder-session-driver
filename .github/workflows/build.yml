@@ -1,0 +1,126 @@
+name: Build & Notarize Wonder Session Driver
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      serial:
+        description: 'Serial number to embed (optional)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Import Developer ID certificates ──────────────────────────────────
+      - name: Import certificates
+        env:
+          APP_CERT_P12:      ${{ secrets.APP_CERT_P12 }}
+          APP_CERT_PASSWORD: ${{ secrets.APP_CERT_PASSWORD }}
+          PKG_CERT_P12:      ${{ secrets.PKG_CERT_P12 }}
+          PKG_CERT_PASSWORD: ${{ secrets.PKG_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+          echo "$APP_CERT_P12" | base64 --decode > /tmp/app_cert.p12
+          security import /tmp/app_cert.p12 -k build.keychain \
+            -P "$APP_CERT_PASSWORD" -T /usr/bin/codesign
+
+          echo "$PKG_CERT_P12" | base64 --decode > /tmp/pkg_cert.p12
+          security import /tmp/pkg_cert.p12 -k build.keychain \
+            -P "$PKG_CERT_PASSWORD" -T /usr/bin/pkgbuild -T /usr/bin/productbuild
+
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PASSWORD" build.keychain
+
+      # ── 3. Compiler les 4 drivers ─────────────────────────────────────────────
+      - name: Build drivers
+        run: make all
+
+      # ── 4. Copier l'icône dans chaque bundle ──────────────────────────────────
+      - name: Copy icon
+        run: |
+          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+            mkdir -p $d.driver/Contents/Resources
+            cp WonderSession.icns $d.driver/Contents/Resources/
+          done
+
+      # ── 5. Signer les 4 drivers ───────────────────────────────────────────────
+      - name: Sign drivers
+        env:
+          APP_IDENTITY: ${{ secrets.APP_IDENTITY }}
+        run: |
+          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+            codesign --sign "$APP_IDENTITY" \
+              --options runtime --timestamp --force --deep \
+              $d.driver
+            echo "✅ Signed: $d"
+          done
+
+      # ── 6. Construire le .pkg avec pkgbuild ───────────────────────────────────
+      - name: Build component packages
+        run: |
+          mkdir -p pkg_root/Library/Audio/Plug-Ins/HAL
+          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+            cp -r $d.driver pkg_root/Library/Audio/Plug-Ins/HAL/
+          done
+
+          pkgbuild \
+            --root pkg_root \
+            --identifier com.wonderstudio.driver \
+            --version 1.0.0 \
+            --install-location / \
+            --scripts Installer/scripts \
+            WonderSession-component.pkg
+
+      # ── 7. Assembler le .pkg final avec productbuild ──────────────────────────
+      - name: Build final pkg
+        env:
+          PKG_IDENTITY: ${{ secrets.PKG_IDENTITY }}
+          SERIAL:       ${{ github.event.inputs.serial }}
+        run: |
+          if [ -n "$SERIAL" ]; then
+            sed -i '' "s/SERIAL_PLACEHOLDER/$SERIAL/" Installer/Distribution.xml
+          fi
+
+          productbuild \
+            --distribution Installer/Distribution.xml \
+            --resources Installer/Resources \
+            --package-path . \
+            --sign "$PKG_IDENTITY" \
+            WonderSessionDriver.pkg
+
+      # ── 8. Notariser ──────────────────────────────────────────────────────────
+      - name: Notarize
+        env:
+          APPLE_ID:      ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PWD: ${{ secrets.APPLE_APP_PWD }}
+        run: |
+          xcrun notarytool submit WonderSessionDriver.pkg \
+            --apple-id     "$APPLE_ID" \
+            --team-id      "$APPLE_TEAM_ID" \
+            --password     "$APPLE_APP_PWD" \
+            --wait
+
+          xcrun stapler staple WonderSessionDriver.pkg
+          echo "✅ Notarized & stapled"
+
+      # ── 9. Upload artifact ────────────────────────────────────────────────────
+      - name: Upload pkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: WonderSessionDriver
+          path: WonderSessionDriver.pkg
+          retention-days: 30

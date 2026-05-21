@@ -1,0 +1,5 @@
+#!/bin/bash
+for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+    rm -rf "/Library/Audio/Plug-Ins/HAL/$d.driver"
+done
+exit 0
