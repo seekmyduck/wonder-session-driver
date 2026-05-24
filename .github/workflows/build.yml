@@ -35,14 +35,14 @@ jobs:
 
       - name: Copy icon
         run: |
-          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+          for d in WS-DAW-to-Talent WS-DAW-to-Session WS-Session-to-DAW WS-Talent-to-DAW; do
             mkdir -p $d.driver/Contents/Resources
             cp WonderSession.icns $d.driver/Contents/Resources/
           done
 
       - name: Sign drivers
         run: |
-          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+          for d in WS-DAW-to-Talent WS-DAW-to-Session WS-Session-to-DAW WS-Talent-to-DAW; do
             codesign --sign "Developer ID Application: David Tarabbia (2A28Q8V23R)" \
               --options runtime --timestamp --force --deep \
               $d.driver
@@ -52,7 +52,7 @@ jobs:
       - name: Build pkg
         run: |
           mkdir -p pkg_root/Library/Audio/Plug-Ins/HAL
-          for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+          for d in WS-DAW-to-Talent WS-DAW-to-Session WS-Session-to-DAW WS-Talent-to-DAW; do
             cp -r $d.driver pkg_root/Library/Audio/Plug-Ins/HAL/
           done
 
@@ -76,7 +76,6 @@ jobs:
           xcrun notarytool submit WonderSessionDriver.pkg \
             --keychain-profile notarytool-wondervo \
             --wait
-
           xcrun stapler staple WonderSessionDriver.pkg
           echo "✅ Notarized & stapled"
 
