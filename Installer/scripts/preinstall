@@ -1,5 +1,8 @@
 #!/bin/bash
-for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do
+for d in WS-DAW-to-Talent WS-DAW-to-Session WS-Session-to-DAW WS-Talent-to-DAW; do
     rm -rf "/Library/Audio/Plug-Ins/HAL/$d.driver"
 done
+# Supprimer aussi les anciens noms au cas où
+rm -rf "/Library/Audio/Plug-Ins/HAL/WS-DAW-to-Conf.driver"
+rm -rf "/Library/Audio/Plug-Ins/HAL/WS-Conf-to-DAW.driver"
 exit 0

@@ -7,14 +7,14 @@
 | Driver | Description |
 |--------|-------------|
 | **WS - DAW to Talent** | Send audio from your DAW to the Talent |
-| **WS - DAW to Conf** | Send audio from your DAW to the Conference |
-| **WS - Conf to DAW** | Send audio from the Conference to your DAW |
+| **WS - DAW to Session** | Send audio from your DAW to the Session |
+| **WS - Session to DAW** | Send audio from the Session to your DAW |
 | **WS - Talent to DAW** | Send audio from the Talent to your DAW |
 
 ## Requirements
 
 - macOS 10.14 or later
-- Apple Silicon (arm64) and Intel (x86_64) supported
+- Intel (x86_64) supported
 
 ## Installation
 
