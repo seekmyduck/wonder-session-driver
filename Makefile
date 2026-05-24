@@ -11,19 +11,18 @@ CFLAGS       = -std=c11 -Wall -O2 \
                -framework Accelerate
 
 DEVELOPER_ID = "Developer ID Application: David Tarabbia (2A28Q8V23R)"
-INSTALLER_ID = "Developer ID Installer: David Tarabbia (2A28Q8V23R)"
 SRC          = WonderSessionDriver.c
 
-DEFINES_1    = -DkDriver_Name='"WS - DAW to Talent"' -DkPlugIn_BundleID='"com.wonderstudio.ws-daw-to-talent"' -DkHas_Driver_Name_Format=false
-DEFINES_2    = -DkDriver_Name='"WS - DAW to Conf"'   -DkPlugIn_BundleID='"com.wonderstudio.ws-daw-to-conf"'   -DkHas_Driver_Name_Format=false
-DEFINES_3    = -DkDriver_Name='"WS - Conf to DAW"'   -DkPlugIn_BundleID='"com.wonderstudio.ws-conf-to-daw"'   -DkHas_Driver_Name_Format=false
-DEFINES_4    = -DkDriver_Name='"WS - Talent to DAW"' -DkPlugIn_BundleID='"com.wonderstudio.ws-talent-to-daw"' -DkHas_Driver_Name_Format=false
+DEFINES_1    = -DkDriver_Name='"WS - DAW to Talent"'  -DkPlugIn_BundleID='"com.wonderstudio.ws-daw-to-talent"'  -DkHas_Driver_Name_Format=false
+DEFINES_2    = -DkDriver_Name='"WS - DAW to Session"' -DkPlugIn_BundleID='"com.wonderstudio.ws-daw-to-session"' -DkHas_Driver_Name_Format=false
+DEFINES_3    = -DkDriver_Name='"WS - Session to DAW"' -DkPlugIn_BundleID='"com.wonderstudio.ws-session-to-daw"' -DkHas_Driver_Name_Format=false
+DEFINES_4    = -DkDriver_Name='"WS - Talent to DAW"'  -DkPlugIn_BundleID='"com.wonderstudio.ws-talent-to-daw"'  -DkHas_Driver_Name_Format=false
 
 COMMON_DEFINES = -DkNumber_Of_Channels=2 -DkManufacturer_Name='"Wonder Studio"'
 
 BINS = WS-DAW-to-Talent.driver/Contents/MacOS/WS-DAW-to-Talent \
-       WS-DAW-to-Conf.driver/Contents/MacOS/WS-DAW-to-Conf \
-       WS-Conf-to-DAW.driver/Contents/MacOS/WS-Conf-to-DAW \
+       WS-DAW-to-Session.driver/Contents/MacOS/WS-DAW-to-Session \
+       WS-Session-to-DAW.driver/Contents/MacOS/WS-Session-to-DAW \
        WS-Talent-to-DAW.driver/Contents/MacOS/WS-Talent-to-DAW
 
 all: $(BINS)
@@ -35,16 +34,16 @@ WS-DAW-to-Talent.driver/Contents/MacOS/WS-DAW-to-Talent: $(SRC)
 	    -exported_symbols_list WS-DAW-to-Talent.exp \
 	    -bundle -o $@ $<
 
-WS-DAW-to-Conf.driver/Contents/MacOS/WS-DAW-to-Conf: $(SRC)
+WS-DAW-to-Session.driver/Contents/MacOS/WS-DAW-to-Session: $(SRC)
 	mkdir -p $(@D)
 	$(CXX) $(CFLAGS) $(COMMON_DEFINES) $(DEFINES_2) \
-	    -exported_symbols_list WS-DAW-to-Conf.exp \
+	    -exported_symbols_list WS-DAW-to-Session.exp \
 	    -bundle -o $@ $<
 
-WS-Conf-to-DAW.driver/Contents/MacOS/WS-Conf-to-DAW: $(SRC)
+WS-Session-to-DAW.driver/Contents/MacOS/WS-Session-to-DAW: $(SRC)
 	mkdir -p $(@D)
 	$(CXX) $(CFLAGS) $(COMMON_DEFINES) $(DEFINES_3) \
-	    -exported_symbols_list WS-Conf-to-DAW.exp \
+	    -exported_symbols_list WS-Session-to-DAW.exp \
 	    -bundle -o $@ $<
 
 WS-Talent-to-DAW.driver/Contents/MacOS/WS-Talent-to-DAW: $(SRC)
@@ -53,15 +52,8 @@ WS-Talent-to-DAW.driver/Contents/MacOS/WS-Talent-to-DAW: $(SRC)
 	    -exported_symbols_list WS-Talent-to-DAW.exp \
 	    -bundle -o $@ $<
 
-sign: all
-	@for d in WS-DAW-to-Talent WS-DAW-to-Conf WS-Conf-to-DAW WS-Talent-to-DAW; do \
-	    codesign --sign $(DEVELOPER_ID) \
-	        --options runtime --timestamp --force --deep $$d.driver; \
-	    echo "✅ Signé: $$d"; \
-	done
-
 clean:
 	rm -f WS-DAW-to-Talent.driver/Contents/MacOS/WS-DAW-to-Talent
-	rm -f WS-DAW-to-Conf.driver/Contents/MacOS/WS-DAW-to-Conf
-	rm -f WS-Conf-to-DAW.driver/Contents/MacOS/WS-Conf-to-DAW
+	rm -f WS-DAW-to-Session.driver/Contents/MacOS/WS-DAW-to-Session
+	rm -f WS-Session-to-DAW.driver/Contents/MacOS/WS-Session-to-DAW
 	rm -f WS-Talent-to-DAW.driver/Contents/MacOS/WS-Talent-to-DAW
