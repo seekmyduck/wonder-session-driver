@@ -59,7 +59,7 @@ jobs:
           pkgbuild \
             --root pkg_root \
             --identifier com.wonderstudio.driver \
-            --version 1.0.0 \
+            --version 2.0.0 \
             --install-location / \
             --scripts Installer/scripts \
             WonderSession-component.pkg

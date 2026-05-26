@@ -1,3 +1,75 @@
 #!/bin/bash
+# ============================================================
+#  Wonder Session Driver — postinstall
+#  1. Recharger coreaudiod
+#  2. Créer le port IAC "WonderSession MTC" si absent
+# ============================================================
+
+# 1. Activer les drivers audio
 killall coreaudiod 2>/dev/null || true
+
+# 2. Créer le port IAC via Python3
+python3 << 'PYEOF'
+import plistlib, os, subprocess, time
+
+PLIST_PATH = '/Library/Preferences/Audio/com.apple.MIDI.plist'
+IAC_BUS_NAME = 'WonderSession MTC'
+
+def load_plist():
+    if os.path.exists(PLIST_PATH):
+        with open(PLIST_PATH, 'rb') as f:
+            return plistlib.load(f)
+    return {}
+
+def save_plist(data):
+    os.makedirs(os.path.dirname(PLIST_PATH), exist_ok=True)
+    with open(PLIST_PATH, 'wb') as f:
+        plistlib.dump(data, f, fmt=plistlib.FMT_XML)
+
+def iac_bus_exists(data):
+    buses = data.get('IAC Driver', {}).get('Buses', [])
+    for bus in buses:
+        for port in bus.get('Ports', []):
+            if port.get('Name') == IAC_BUS_NAME:
+                return True
+    return False
+
+def add_iac_bus(data):
+    if 'IAC Driver' not in data:
+        data['IAC Driver'] = {'Device is online': True, 'Buses': []}
+    
+    buses = data['IAC Driver'].get('Buses', [])
+    new_bus = {
+        'Number Of Ports': 1,
+        'Ports': [{'Name': IAC_BUS_NAME}]
+    }
+    buses.append(new_bus)
+    data['IAC Driver']['Buses'] = buses
+    data['IAC Driver']['Device is online'] = True
+    return data
+
+try:
+    # Stopper MIDIServer avant de modifier le plist
+    subprocess.run(['killall', 'MIDIServer'], capture_output=True)
+    time.sleep(0.5)
+    
+    data = load_plist()
+    
+    if iac_bus_exists(data):
+        print(f'[WonderSession] Port IAC "{IAC_BUS_NAME}" déjà présent.')
+    else:
+        data = add_iac_bus(data)
+        save_plist(data)
+        print(f'[WonderSession] Port IAC "{IAC_BUS_NAME}" créé.')
+    
+    # Redémarrer MIDIServer
+    time.sleep(0.3)
+    subprocess.run(['killall', 'coreaudiod'], capture_output=True)
+
+except Exception as e:
+    print(f'[WonderSession] Erreur création port IAC: {e}')
+    # Non bloquant — le driver audio fonctionne quand même
+
+PYEOF
+
 exit 0
